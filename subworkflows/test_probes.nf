@@ -2,7 +2,6 @@
 
 workflow TEST_PROBES {
     take:
-        samples_ch
         merged_reads
         genome_cov_bed
         ref_fasta
@@ -22,18 +21,90 @@ workflow TEST_PROBES {
             MERGE_CAN_DEPLETE_REGIONS.out.can_deplete_regions_merged,
             top_coverage_regions
         )
-        CALCULATE_STATS(
+        //Channel.of(samples_ch, RUN_SORTMERNA_BEST_HIT, GET_NEAR_PROBE_READS).collect().view()
+        merged_reads.collect(flat: false).set {all_samples}
+        RUN_SORTMERNA_BEST_HIT.out.collect(flat: false).set {srotmerna_bam}
+        GET_NEAR_PROBE_READS.out.collect(flat: false).set {near_probe_reads}
+
+        /*CALCULATE_STATS(
             samples_ch,
-            RUN_SORTMERNA_BEST_HIT.out,
-            GET_NEAR_PROBE_READS.out,
+            srotmerna_bam,
+            near_probe_reads,
             MERGE_CAN_DEPLETE_REGIONS.out.top_coverage_result
+        )*/
+
+        CALCULATE_STATS(
+            all_samples,
+            srotmerna_bam,
+            near_probe_reads
         )
+        GENERATE_REPORTS(CALCULATE_STATS.out)
+}
+
+process GENERATE_REPORTS {
+    label 'small'
+    publishDir "${params.outdir}", mode: 'copy'
+
+    input:
+    path "top_coverage_result.csv"
+
+    output:
+    path "./reports"
+
+    script:
+    """
+    cp top_coverage_result.csv test_probes_rrna_reduction.csv
+    cp top_coverage_result.csv test_probes_composition.csv
+    cut -f1,7,8,9 -d, top_coverage_result.csv >test_probes_heatmap.csv
+    rm -rf multiqc_report &&  multiqc . -o reports --config /app/config/multiqc_custom.yaml
+    """
 }
 
 process CALCULATE_STATS {
     label 'small'
+
+    publishDir "${params.test_dir}"
+    errorStrategy 'finish'
+
+    input:
+    val all_samples
+    val sortmerna_bam_files
+    val near_probe_sam_files
+
+    output:
+    val "${params.test_dir}/top_coverage_result.csv"
+
+    exec:
+    def fastq_map = all_samples.collectEntries { [it[0], it[1]] }
+    def bam_map = sortmerna_bam_files.collectEntries { [it[0], it[1]] }
+    def sam_map = near_probe_sam_files.collectEntries { [it[0], it[1]] }
+
+    def resultFile = new File(params.test_dir.toString() + "/top_coverage_result.csv")
+    resultFile.text = "Sample ID,Total Reads,Total Mapped,Remaining Mapped,Unmapped,Depleted,Mapped Percent,Depleted Mapped Percent,rRNA Depletion Percent\n"
+
+    fastq_map.keySet().each { sample_id ->
+        def merged_fastq_path = fastq_map[sample_id]
+        def bam_path = bam_map[sample_id]
+        def sam_path = sam_map[sample_id]
+
+        def depleted = new File(sam_path.toString()).readLines().size()
+        def totalmapped = "samtools view -F 4 ${bam_path.toString()}".execute().text.readLines().size()
+        def totalfastq_lines = new File(merged_fastq_path.toString()).readLines().size()
+        def totalfastq = totalfastq_lines / 4
+
+        def mapped_percent = (totalmapped / totalfastq) * 100
+        def depleted_mapped_percent = ((totalmapped - depleted) / (totalfastq - depleted)) * 100
+        def diff_percent = mapped_percent - depleted_mapped_percent
+        def remaining_mapped = totalmapped - depleted
+        def unmapped = totalfastq - totalmapped
+        resultFile.append("${sample_id},${totalfastq},${totalmapped},${remaining_mapped},${unmapped},${depleted},${String.format('%.2f', mapped_percent)},${String.format('%.2f', depleted_mapped_percent)},${String.format('%.2f', diff_percent)}\n")
+    }
+}
+
+/*process CALCULATE_STATS {
+    label 'small'
     tag "$sample_id"
-    publishDir "${params.test_dir}", mode: 'copy', overwrite: false
+    publishDir "${params.test_dir}"
     errorStrategy 'ignore'
 
     input:
@@ -52,7 +123,7 @@ process CALCULATE_STATS {
     totalfastq=`wc -l $read1 | awk '{print \$1/4*2;}'`
     echo ${sample_id}","\${totalmapped}","\${depleted}","\${totalfastq} | awk 'BEGIN { FS=",";OFS = "\t";}{print \$1,\$2,\$3,\$4,(\$2/\$4*100)"%",((\$2-\$3)/(\$4-\$3)*100)"%",((\$2/\$4*100)-((\$2-\$3)/(\$4-\$3)*100))"%";}' >> $top_coverage_result
     """
-}
+}*/
 
 process GET_NEAR_PROBE_READS {
     label 'medium'
@@ -68,7 +139,7 @@ process GET_NEAR_PROBE_READS {
     val(top_coverage_regions)
 
     output:
-    path("top_${top_coverage_regions}_additional_probe_80perc_only_near_probe_reads.sam")
+    tuple val(sample_id), path("top_${top_coverage_regions}_additional_probe_80perc_only_near_probe_reads.sam")
 
     script:
     """
@@ -184,7 +255,7 @@ process RUN_SORTMERNA_BEST_HIT {
 process MERGE_CAN_DEPLETE_REGIONS {
     label 'small'
 
-    publishDir "${params.test_dir}", mode: 'copy'
+    publishDir "${params.test_dir}"
 
     input:
     path(can_deplete_regions)
