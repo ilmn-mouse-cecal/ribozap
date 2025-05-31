@@ -21,6 +21,10 @@ RUN conda install -y -c bioconda -c conda-forge \
     bedtools=2.31.1 \
     blast=2.16.0 \
     samtools=1.21 \
+    matplotlib \
+    pandas \
+    seaborn \
+    multiqc \
     && conda clean -afy
 
 # Install Nextflow
@@ -66,6 +70,7 @@ COPY ./bin /app/bin
 COPY ./subworkflows /app/subworkflows
 COPY ./main.nf /app/main.nf
 COPY ./nextflow.config /app/nextflow.config
+COPY ./config /app/config
 
 SHELL ["/bin/bash", "-c"]
 CMD ["/bin/bash"]
