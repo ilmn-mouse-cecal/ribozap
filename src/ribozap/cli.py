@@ -99,6 +99,7 @@ def main():
         image="ribozap:latest",  # TODO: make this configurable later
         mount_file=mount_path,
         out_dir=out_dir,
+        analysis_name=analysis_name,
         container_cmd=f"nextflow run main.nf -work-dir /app/{out_dir.name}/{analysis_name}/work/ --sample_sheet /app/{out_dir.name}/{rewritten_path.name} --outdir /app/{out_dir.name}/{analysis_name} --trace_dir /app/{out_dir.name}/{analysis_name}/trace_dir --top_coverage_regions {num_coverage_regions} --cpus {high_cpus} --memory '{high_memory} GB' {resume_flag}",
         cpus=args.cpus,
         memory=args.memory
