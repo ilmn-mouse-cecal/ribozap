@@ -51,8 +51,8 @@ custom_data:
 
 sp:
     test_probes_rrna_reduction:
-        fn: 'top_coverage_result1.csv'
+        fn: 'test_probes_rrna_reduction.csv'
     test_probes_composition:
-        fn: 'top_coverage_result.csv'
+        fn: 'test_probes_composition.csv'
     test_probes_heatmap:
-        fn: 'top_coverage_result2.csv'
+        fn: 'test_probes_heatmap.csv'
