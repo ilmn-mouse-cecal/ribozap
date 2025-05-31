@@ -1,0 +1,58 @@
+custom_data:
+    
+    test_probes_rrna_reduction:
+        plot_type: 'bargraph'
+        file_format: 'csv'
+        section_name: 'Probes test in-silico: rRNA reduction by extra probes'
+        categories:
+            rRNA Depletion Percent:
+                name: "rRNA Depletion Percent"
+                color: "#274472"
+        pconfig:
+            id: 'rRNA_reduction_extra_probes'
+            title: 'rRNA Reduction by Extra Probes'
+            ylab: 'Estimated rRNA Reduction (%)'
+    
+    test_probes_composition:
+        plot_type: 'bargraph'
+        file_format: 'csv'
+        section_name: 'Probes test in-silico: Read composition'
+        categories:
+            Depleted:
+                name: "Depleted"
+                color: "#4c72b0"
+            Remaining Mapped:
+                name: "Remaining Mapped"
+                color: "#dd8452"
+            Unmapped:
+                name: "Unmapped"
+                color: "#999999"
+        pconfig:
+            id: 'read_composition_by_sample'
+            title: 'Read Composition by Sample'
+            ylab: 'Read Count'
+            stacking: 'normal'
+    
+    test_probes_heatmap:
+        plot_type: 'heatmap'
+        file_format: 'csv'
+        section_name: 'Probes test in-silico: Heatmap of Mapping Metrics'
+        
+        categories:
+            Depleted Mapped Percent:
+                name: "Depleted"
+            
+            Difference Percent:
+                name: "Depleted2"
+                
+        pconfig:
+            id: 'rRNA_mapping_percent'
+            
+
+sp:
+    test_probes_rrna_reduction:
+        fn: 'top_coverage_result1.csv'
+    test_probes_composition:
+        fn: 'top_coverage_result.csv'
+    test_probes_heatmap:
+        fn: 'top_coverage_result2.csv'
