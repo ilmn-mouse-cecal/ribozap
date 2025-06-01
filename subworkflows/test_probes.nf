@@ -22,17 +22,10 @@ workflow TEST_PROBES {
             MERGE_CAN_DEPLETE_REGIONS.out.can_deplete_regions_merged,
             top_coverage_regions
         )
-        //Channel.of(samples_ch, RUN_SORTMERNA_BEST_HIT, GET_NEAR_PROBE_READS).collect().view()
+
         merged_reads.collect(flat: false).set {all_samples}
         RUN_SORTMERNA_BEST_HIT.out.collect(flat: false).set {srotmerna_bam}
         GET_NEAR_PROBE_READS.out.collect(flat: false).set {near_probe_reads}
-
-        /*CALCULATE_STATS(
-            samples_ch,
-            srotmerna_bam,
-            near_probe_reads,
-            MERGE_CAN_DEPLETE_REGIONS.out.top_coverage_result
-        )*/
 
         CALCULATE_STATS(
             all_samples,
