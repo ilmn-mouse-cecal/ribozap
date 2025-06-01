@@ -28,7 +28,7 @@ workflow {
         .set { samples_ch }
 
     MERGE_PAIRED_READS(samples_ch)
-    /*RUN_SORTMERNA(MERGE_PAIRED_READS.out, "/app/idx", "${params.cpus}")
+    RUN_SORTMERNA(MERGE_PAIRED_READS.out, "/app/idx", "${params.cpus}")
     RUN_SORTMERNA.out.map { sample_id, sortmerna_list, sam_file, merged_fastq ->
         tuple(sample_id, sam_file, merged_fastq)
     }
@@ -50,20 +50,21 @@ workflow {
     IDENTIFY_HEATMAP_BLOCKS(RUN_BLAST.out.blast_hit_json, RUN_BLAST.out.cov_fasta, params.top_coverage_regions)
     MAKE_BED_25BP_GAP(IDENTIFY_HEATMAP_BLOCKS.out.top_regions_80_perc_only_fai, params.top_coverage_regions)
     GET_FASTA(MAKE_BED_25BP_GAP.out, IDENTIFY_HEATMAP_BLOCKS.out.top_regions_80_perc_only_fasta, params.top_coverage_regions)
+    
     TEST_PROBES(
-        samples_ch,
         MERGE_PAIRED_READS.out,
         GENOME_COVERAGE_BED.out,
         "/app/resources/Genome/allFasta.fasta",
-        GET_FASTA.out,
+        GET_FASTA.out.probes_fasta,
+        GET_FASTA.out.probes_summary,
         params.top_coverage_regions
-    )*/
+    )
 }
 
 process GET_FASTA {
     label 'medium'
 
-    publishDir "${params.outdir}/top_${params.top_coverage_regions}/"
+    publishDir "${params.outdir}/probes/", mode: 'copy'
 
     input:
     path(bed_file)
@@ -71,18 +72,21 @@ process GET_FASTA {
     val(top_coverage_regions)
 
     output:
-    path("top_${top_coverage_regions}_additional_probe_80perc_only.fasta")
+    path("top_${top_coverage_regions}_additional_probe_80perc_only.fasta"), emit: probes_fasta
+    path("probes_summary.csv"), emit: probes_summary
     
     script:
     """
     bedtools getfasta -s -fi $fasta_file -bed $bed_file -fo top_${top_coverage_regions}_additional_probe_80perc_only.fasta
+    # Create probes table
+    python /app/bin/summarize_probes.py top_${top_coverage_regions}_additional_probe_80perc_only.fasta probes_summary.csv
     """
 }
 
 process MAKE_BED_25BP_GAP {
     label 'small'
 
-    publishDir "${params.outdir}/top_${params.top_coverage_regions}/"
+    publishDir "${params.outdir}/probes/"
 
     input:
     path(fasta_index)
@@ -100,7 +104,7 @@ process MAKE_BED_25BP_GAP {
 process IDENTIFY_HEATMAP_BLOCKS {
     label 'small'
 
-    publishDir "${params.outdir}/top_${params.top_coverage_regions}/"
+    publishDir "${params.outdir}/probes/"
 
     input:
     path(blast_hit_json)
@@ -122,7 +126,7 @@ process IDENTIFY_HEATMAP_BLOCKS {
 process RUN_BLAST {
     label 'medium'
 
-    publishDir "${params.outdir}/top_${params.top_coverage_regions}"
+    publishDir "${params.outdir}/probes"
 
     input:
     path(cov_fasta)
@@ -142,7 +146,7 @@ process RUN_BLAST {
 process BED_TO_FASTA {
     label 'medium'
 
-    publishDir "${params.outdir}/top_${params.top_coverage_regions}/"
+    publishDir "${params.outdir}/probes/"
 
     input:
     path(top_cov_region_bed)
@@ -161,7 +165,7 @@ process BED_TO_FASTA {
 process MERGE_OVERLAPPING_REGIONS {
     label 'small'
 
-    publishDir "${params.outdir}/top_${params.top_coverage_regions}/"
+    publishDir "${params.outdir}/probes/"
 
     input:
     val(top_coverage_regions)
@@ -179,7 +183,7 @@ process MERGE_OVERLAPPING_REGIONS {
 process GET_TOP_COVERAGE_REGIONS {
     label 'small'
 
-    publishDir "${params.outdir}/top_${params.top_coverage_regions}/"
+    publishDir "${params.outdir}/probes/"
 
     input:
     val(top_coverage_regions)

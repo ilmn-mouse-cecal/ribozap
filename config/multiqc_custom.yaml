@@ -1,5 +1,18 @@
 custom_data:
-    
+    probe_fasta_link:
+        section_name: '🧬'
+        file_format: 'html'
+        plot_type: 'html'
+        target: 'probe_download.md'
+
+    probe_summary:
+        file_format: 'csv'
+        section_name: 'Probe Design Summary'
+        plot_type: 'table'
+        pconfig:
+            id: 'probe_summary'
+            title: 'Custom Probes Used for rRNA Depletion'
+        
     test_probes_rrna_reduction:
         plot_type: 'bargraph'
         file_format: 'csv'
@@ -50,6 +63,10 @@ custom_data:
             
 
 sp:
+    probe_fasta_link:
+        fn: 'probe_download.md'
+    probe_summary:
+        fn: 'probes_summary.csv'
     test_probes_rrna_reduction:
         fn: 'test_probes_rrna_reduction.csv'
     test_probes_composition:

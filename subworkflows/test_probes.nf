@@ -6,6 +6,7 @@ workflow TEST_PROBES {
         genome_cov_bed
         ref_fasta
         additional_probe_80_percent_fasta
+        probes_summary
         top_coverage_regions
 
     main:
@@ -38,7 +39,11 @@ workflow TEST_PROBES {
             srotmerna_bam,
             near_probe_reads
         )
-        GENERATE_REPORTS(CALCULATE_STATS.out)
+        GENERATE_REPORTS(
+            CALCULATE_STATS.out,
+            additional_probe_80_percent_fasta,
+            probes_summary
+        )
 }
 
 process GENERATE_REPORTS {
@@ -47,16 +52,21 @@ process GENERATE_REPORTS {
 
     input:
     path "top_coverage_result.csv"
+    path probes_fasta
+    path probes_summary
 
     output:
     path "./reports"
 
     script:
     """
+    echo "4"
+    cp /app/bin/probe_download.md .
     cp top_coverage_result.csv test_probes_rrna_reduction.csv
     cp top_coverage_result.csv test_probes_composition.csv
     cut -f1,7,8,9 -d, top_coverage_result.csv >test_probes_heatmap.csv
-    rm -rf multiqc_report &&  multiqc . -o reports --config /app/config/multiqc_custom.yaml
+    rm -rf reports &&  multiqc . -o reports --config /app/config/multiqc_custom.yaml
+    cp $probes_fasta reports/probes.fasta
     """
 }
 
