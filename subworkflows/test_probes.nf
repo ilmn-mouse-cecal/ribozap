@@ -53,7 +53,6 @@ process GENERATE_REPORTS {
 
     script:
     """
-    echo "4"
     cp /app/bin/probe_download.md .
     cp top_coverage_result.csv test_probes_rrna_reduction.csv
     cp top_coverage_result.csv test_probes_composition.csv
