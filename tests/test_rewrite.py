@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 import tempfile
 import pytest
-from ribozap.rewrite import validate_and_rewrite
+from ribozap.rewrite import validate_and_rewrite, write_mounts
 
 
 def _write_sample_sheet(path, rows, header=("sample_id", "read1", "read2")):
@@ -129,3 +129,18 @@ def test_same_sample_multiple_dirs_error():
 
         with pytest.raises(ValueError, match="multiple directories"):
             validate_and_rewrite(sample_sheet, out_sheet, mount_file)
+
+def test_write_mounts():
+    mounts = {
+        "/host/path1": "/container/path1",
+        "/host/path2": "/container/path2"
+    }
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mount_file = Path(tmpdir) / "mounts.txt"
+        write_mounts(mount_file, mounts)
+        with mount_file.open() as f:
+            lines = f.readlines()
+        assert lines == [
+            '-v "/host/path1":"/container/path1"\n',
+            '-v "/host/path2":"/container/path2"\n'
+        ]
