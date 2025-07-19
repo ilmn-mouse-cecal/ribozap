@@ -43,7 +43,16 @@ def run_subprocess_command(docker_cmd):
         logger.error(f"Docker command failed: {e}")
         raise
 
-def run_docker(image: str, mount_file: Path, out_dir: Path, analysis_name: str, container_cmd: str, cpus=4, memory=16):
+def run_docker(
+    image: str, 
+    mount_file: Path, 
+    out_dir: Path, 
+    analysis_name: str, 
+    container_cmd: str, 
+    cpus=4, 
+    memory=16,
+    dry_run=False
+):
     docker_options = []
     if cpus:
         docker_options.append(f"--cpus={cpus}")
@@ -59,4 +68,7 @@ def run_docker(image: str, mount_file: Path, out_dir: Path, analysis_name: str, 
     docker_cmd = build_docker_command(image, docker_options, mount_lines, container_cmd)
 
     # Run docker
-    run_subprocess_command(docker_cmd)
+    if dry_run:
+        return docker_cmd
+    else:
+        run_subprocess_command(docker_cmd)

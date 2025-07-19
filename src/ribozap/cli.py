@@ -23,7 +23,7 @@ def main():
         "--analysis-name",
         type=str,
         required=True,
-        help="Name of the analysis"
+        help="Name of the analysis",
     )
 
     parser.add_argument(
@@ -36,8 +36,8 @@ def main():
     parser.add_argument(
         "--output-dir",
         type=Path,
-        required=True,
         help="Directory to write outputs and mount in Docker",
+        required=True
     )
 
     parser.add_argument(
@@ -45,37 +45,50 @@ def main():
         default=4,
         type=int,
         help="Limit number of CPUs for Docker container (e.g. 4)",
+        required=False
     )
 
     parser.add_argument(
-        "--memory", default=16, type=int, help="Limit memory for Docker container (e.g. 16)"
+        "--memory", default=16, type=int, help="Limit memory for Docker container (e.g. 16)",
+        required=False
     )
 
     parser.add_argument(
         "--resume",
         action="store_true",
         help="Enable Nextflow -resume mode to continue from previous work directory",
+        required=False
     )
 
     parser.add_argument(
         "--num-cov-regions",
         default=50,
         type=int,
-        help="Enter the number of top high-coverage regions from the BED file to keep (default: 50)"
+        help="Enter the number of top high-coverage regions from the BED file to keep (default: 50)",
+        required=False
     )
 
     parser.add_argument(
         "--image",
         default="ribozap",
         type=str,
-        help="Enter the image name you would like to use. Default is 'ribozap'"
+        help="Enter the image name you would like to use. Default is 'ribozap'",
+        required=False
     )
 
     parser.add_argument(
         "--image-tag",
         default='latest',
         type=str,
-        help="Enter the docker image tag. Default is 'latest'"
+        help="Enter the docker image tag. Default is 'latest'",
+        required=False
+    )
+
+    parser.add_argument(
+        "--dry-run", 
+        action="store_true", 
+        help="Show what would be done, but do not run anything",
+        required=False
     )
 
     args = parser.parse_args()
@@ -109,15 +122,23 @@ def main():
     resume_flag = "-resume" if args.resume else ""
 
     # Step 2: Run Docker
-    run_docker(
+    res = run_docker(
         image=f"{args.image}:{args.image_tag}",
         mount_file=mount_path,
         out_dir=out_dir,
         analysis_name=analysis_name,
         container_cmd=f"nextflow run main.nf -work-dir /app/{out_dir.name}/{analysis_name}/work/ --sample_sheet /app/{out_dir.name}/{rewritten_path.name} --outdir /app/{out_dir.name}/{analysis_name} --trace_dir /app/{out_dir.name}/{analysis_name}/trace_dir --top_coverage_regions {num_coverage_regions} --cpus {high_cpus} --memory '{high_memory} GB' {resume_flag}",
         cpus=args.cpus,
-        memory=args.memory
+        memory=args.memory,
+        dry_run=args.dry_run
     )
+    if args.dry_run:
+        logging.info(f"""
+----------------------------
+[DRY RUN]
+{res}
+----------------------------
+        """)
 
 
 if __name__ == "__main__":
