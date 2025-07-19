@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 import tempfile
 import pytest
-from ribozap.rewrite import validate_and_rewrite, write_mounts
+from ribozap.rewrite import *
 
 
 def _write_sample_sheet(path, rows, header=("sample_id", "read1", "read2")):
@@ -144,3 +144,155 @@ def test_write_mounts():
             '-v "/host/path1":"/container/path1"\n',
             '-v "/host/path2":"/container/path2"\n'
         ]
+
+def test_parse_sample_sheet_single_end():
+    data = [
+        ["sample_id", "read1"],
+        ["s1", "/data/s1_R1.fastq"],
+        ["s2", "/data/s2_R1.fastq"]
+    ]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = Path(tmpdir) / "samples.csv"
+        with path.open("w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerows(data)
+        rows, is_paired = parse_sample_sheet(path)
+        assert not is_paired
+        assert rows == [
+            {"sample_id": "s1", "read1": "/data/s1_R1.fastq"},
+            {"sample_id": "s2", "read1": "/data/s2_R1.fastq"}
+        ]
+
+
+def test_parse_sample_sheet_paired_end():
+    data = [
+        ["sample_id", "read1", "read2"],
+        ["s1", "/data/s1_R1.fastq", "/data/s1_R2.fastq"],
+        ["s2", "/data/s2_R1.fastq", "/data/s2_R2.fastq"]
+    ]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = Path(tmpdir) / "samples.csv"
+        with path.open("w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerows(data)
+        rows, is_paired = parse_sample_sheet(path)
+        assert is_paired
+        assert rows == [
+            {"sample_id": "s1", "read1": "/data/s1_R1.fastq", "read2": "/data/s1_R2.fastq"},
+            {"sample_id": "s2", "read1": "/data/s2_R1.fastq", "read2": "/data/s2_R2.fastq"}
+        ]
+
+def test_parse_sample_sheet_missing_columns():
+    data = [
+        ["id", "read1"],
+        ["s1", "/data/s1_R1.fastq"]
+    ]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = Path(tmpdir) / "samples.csv"
+        with path.open("w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerows(data)
+        with pytest.raises(ValueError):
+            parse_sample_sheet(path)
+
+def test_validate_sample_row_single_end():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        r1 = tmp_path / "s1_R1.fastq"
+        r1.touch()
+        row = {"sample_id": "s1", "read1": str(r1)}
+        sample_id, read1, read2 = validate_sample_row(row, is_paired=False)
+        assert sample_id == "s1"
+        assert read1 == r1.resolve()
+        assert read2 is None
+
+def test_validate_sample_row_paired_end():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        r1 = tmp_path / "s1_R1.fastq"
+        r2 = tmp_path / "s1_R2.fastq"
+        r1.touch()
+        r2.touch()
+        row = {"sample_id": "s1", "read1": str(r1), "read2": str(r2)}
+        sample_id, read1, read2 = validate_sample_row(row, is_paired=True)
+        assert sample_id == "s1"
+        assert read1 == r1.resolve()
+        assert read2 == r2.resolve()
+
+def test_validate_sample_row_missing_read1():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        r1 = tmp_path / "s1_R1.fastq"
+        row = {"sample_id": "s1", "read1": str(r1)}
+        with pytest.raises(FileNotFoundError):
+            validate_sample_row(row, is_paired=False)
+
+def test_validate_sample_row_missing_read2():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_path = Path(tmpdir)
+        r1 = tmp_path / "s1_R1.fastq"
+        r1.touch()
+        r2 = tmp_path / "s1_R2.fastq"
+        row = {"sample_id": "s1", "read1": str(r1), "read2": str(r2)}
+        with pytest.raises(FileNotFoundError):
+            validate_sample_row(row, is_paired=True)
+
+def test_validate_sample_row_different_dirs():
+    with tempfile.TemporaryDirectory() as tmpdir1, tempfile.TemporaryDirectory() as tmpdir2:
+        r1 = Path(tmpdir1) / "s1_R1.fastq"
+        r2 = Path(tmpdir2) / "s1_R2.fastq"
+        r1.touch()
+        r2.touch()
+        row = {"sample_id": "s1", "read1": str(r1), "read2": str(r2)}
+        with pytest.raises(ValueError):
+            validate_sample_row(row, is_paired=True)
+
+def test_rewrite_row_single_end():
+    sample_id = "s1"
+    read1 = Path("/reads/s1_R1.fastq")
+    container_dir = "/container/reads"
+    result = rewrite_row(sample_id, read1, None, container_dir, is_paired=False)
+    assert result == {
+        "sample_id": "s1",
+        "read1": "/container/reads/s1_R1.fastq"
+    }
+
+def test_rewrite_row_paired_end():
+    sample_id = "s2"
+    read1 = Path("/reads/s2_R1.fastq")
+    read2 = Path("/reads/s2_R2.fastq")
+    container_dir = "/container/reads"
+    result = rewrite_row(sample_id, read1, read2, container_dir, is_paired=True)
+    assert result == {
+        "sample_id": "s2",
+        "read1": "/container/reads/s2_R1.fastq",
+        "read2": "/container/reads/s2_R2.fastq"
+    }
+
+def test_write_sample_sheet_single_end():
+    rows = [
+        {"sample_id": "s1", "read1": "/data/s1_R1.fastq"},
+        {"sample_id": "s2", "read1": "/data/s2_R1.fastq"},
+    ]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_path = Path(tmpdir) / "single_end.csv"
+        write_sample_sheet(output_path, rows, is_paired=False)
+        with output_path.open() as fh:
+            lines = fh.read().splitlines()
+        assert lines[0] == "sample_id,read1"
+        assert lines[1] == "s1,/data/s1_R1.fastq"
+        assert lines[2] == "s2,/data/s2_R1.fastq"
+
+def test_write_sample_sheet_paired_end():
+    rows = [
+        {"sample_id": "s1", "read1": "/data/s1_R1.fastq", "read2": "/data/s1_R2.fastq"},
+        {"sample_id": "s2", "read1": "/data/s2_R1.fastq", "read2": "/data/s2_R2.fastq"},
+    ]
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_path = Path(tmpdir) / "paired_end.csv"
+        write_sample_sheet(output_path, rows, is_paired=True)
+        with output_path.open() as fh:
+            lines = fh.read().splitlines()
+        assert lines[0] == "sample_id,read1,read2"
+        assert lines[1] == "s1,/data/s1_R1.fastq,/data/s1_R2.fastq"
+        assert lines[2] == "s2,/data/s2_R1.fastq,/data/s2_R2.fastq"
