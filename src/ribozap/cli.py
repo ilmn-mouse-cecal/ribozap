@@ -64,6 +64,20 @@ def main():
         help="Enter the number of top high-coverage regions from the BED file to keep (default: 50)"
     )
 
+    parser.add_argument(
+        "--image",
+        default="ribozap",
+        type=str,
+        help="Enter the image name you would like to use. Default is 'ribozap'"
+    )
+
+    parser.add_argument(
+        "--image-tag",
+        default='latest',
+        type=str,
+        help="Enter the docker image tag. Default is 'latest'"
+    )
+
     args = parser.parse_args()
     
     if args.cpus < MIN_CPUS:
@@ -96,7 +110,7 @@ def main():
 
     # Step 2: Run Docker
     run_docker(
-        image="ribozap:latest",  # TODO: make this configurable later
+        image=f"{args.image}:{args.image_tag}",
         mount_file=mount_path,
         out_dir=out_dir,
         analysis_name=analysis_name,
