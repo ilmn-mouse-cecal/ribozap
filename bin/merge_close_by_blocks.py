@@ -48,4 +48,4 @@ with input_path.open("r") as fin, output_path.open("w") as fout:
         prev_genome = genome
 
     # Writing final block
-    fout.write(f"{prev_genome}\t{block_start - 1}\t{block_end}\t{block_max}\n")
+    fout.write(f"{prev_genome}\t{block_start}\t{block_end}\t{block_max}\n")
