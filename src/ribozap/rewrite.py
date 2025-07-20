@@ -62,6 +62,10 @@ def write_sample_sheet(output_path, rows, is_paired):
         writer.writeheader()
         writer.writerows(rows)
 
+def write_mounts(mount_file, mounts):
+    with mount_file.open("w") as mf:
+        for host, container in mounts.items():
+            mf.write(f'-v "{host}":"{container}"\n')
 
 def validate_and_rewrite(sheet_path, out_sheet, mount_file):
     logger.info(f"Validating and rewriting sample sheet: {sheet_path}")
@@ -94,9 +98,7 @@ def validate_and_rewrite(sheet_path, out_sheet, mount_file):
     write_sample_sheet(out_sheet, rewritten_rows, is_paired)
     logger.info(f"Rewritten sample sheet to: {out_sheet}")
 
-    with mount_file.open("w") as mf:
-        for host, container in mounts.items():
-            mf.write(f'-v "{host}":"{container}"\n')
+    write_mounts(mount_file, mounts)
     
     logger.info(f"Docker mount file written to: {mount_file}")
     return out_sheet, mount_file

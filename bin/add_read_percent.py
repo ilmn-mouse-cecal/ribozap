@@ -12,7 +12,7 @@ args = parser.parse_args()
 
 # Input and output paths
 input_path = Path(args.cov_sorted_bed)
-output_path = Path(f"{args.sample}_high_coverage_blocks_gap_merged_cov_sorted_percentage_added.bed")
+output_path = input_path.parent / f"{args.sample}_high_coverage_blocks_gap_merged_cov_sorted_percentage_added.bed"
 
 with input_path.open("r") as fin, output_path.open("w") as fout:
     for line in fin:

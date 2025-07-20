@@ -42,4 +42,4 @@ The codebase follows [PEP 8](https://peps.python.org/pep-0008/) conventions and 
 
 If you use `ribozap` in your research, please cite our publication:
 
-Roos M, Bunga S, Tan A, Maissy E, Skola D, Richter A, Whittaker DS, Desplats P, Zarrinpar A, Conrad R, Kuersten S. (2025). *Optimizing mouse metatranscriptome profiling by selective removal of redundant nucleic acid sequences*. **bioRxiv**. https://pubmed.ncbi.nlm.nih.gov/39868335/
+Roos M, Bunga S, Tan A, Maissy E, Skola D, Richter A, Whittaker DS, Desplats P, Zarrinpar A, Conrad R, Kuersten S.0.Optimizing mouse metatranscriptome profiling by selective removal of redundant nucleic acid sequences. mSystems0:e00167-25.https://doi.org/10.1128/msystems.00167-25
