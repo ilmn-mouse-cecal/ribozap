@@ -11,7 +11,7 @@ workflow TEST_PROBES {
 
     main:
         RUN_BLAST(ref_fasta, additional_probe_80_percent_fasta, top_coverage_regions)
-        FILTER_AND_ADD_PADDING(RUN_BLAST.out, ref_fasta, top_coverage_regions)
+        FILTER_AND_ADD_PADDING(RUN_BLAST.out, ref_fasta, top_coverage_regions, params.padding)
         MERGE_CAN_DEPLETE_REGIONS(FILTER_AND_ADD_PADDING.out, top_coverage_regions)
         RUN_SORTMERNA_BEST_HIT(merged_reads, "/app/idx", "${params.cpus}")
         //GENOME_COVERAGE_BED(RUN_SORTMERNA_BEST_HIT.out, ref_fasta)
@@ -283,13 +283,14 @@ process FILTER_AND_ADD_PADDING {
     path(blast_result_txt)
     path(ref_fasta)
     val(top_coverage_regions)
+    val(padding)
 
     output:
     path("top_${top_coverage_regions}_additional_probe_80perc_only_can_deplete_regions_sorted.txt")
     
     script:
     """
-    /app/bin/filter_add_padding.py -i $blast_result_txt -f $ref_fasta -o top_${top_coverage_regions}_additional_probe_80perc_only_can_deplete_regions.txt -p 50
+    /app/bin/filter_add_padding.py -i $blast_result_txt -f $ref_fasta -o top_${top_coverage_regions}_additional_probe_80perc_only_can_deplete_regions.txt -p ${padding}
     sortBed -i top_${top_coverage_regions}_additional_probe_80perc_only_can_deplete_regions.txt > top_${top_coverage_regions}_additional_probe_80perc_only_can_deplete_regions_sorted.txt
     """
 }

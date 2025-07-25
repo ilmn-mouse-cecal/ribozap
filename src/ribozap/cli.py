@@ -72,8 +72,15 @@ def main():
         "--gap",
         default=25,
         type=int,
-        help="Gap size between probes(default: 25)",
+        help="Gap size between probes (default: 25)",
         required=False
+    )
+
+    parser.add_argument(
+        "--padding",
+        type=int,
+        default=50,
+        help="Number of bases to extend upstream and downstream of each alignment (default: 50bp). This is useful for in silico probe testing to get coverage beyond the aligned region."
     )
 
     parser.add_argument(
@@ -121,6 +128,7 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     num_coverage_regions = args.num_cov_regions
     gap = args.gap
+    padding = args.padding
 
     rewritten_path = out_dir / "rewritten_sample_sheet.csv"
     mount_path = out_dir / "docker_mounts.txt"
@@ -136,7 +144,7 @@ def main():
         mount_file=mount_path,
         out_dir=out_dir,
         analysis_name=analysis_name,
-        container_cmd=f"nextflow run main.nf -work-dir /app/{out_dir.name}/{analysis_name}/work/ --sample_sheet /app/{out_dir.name}/{rewritten_path.name} --outdir /app/{out_dir.name}/{analysis_name} --trace_dir /app/{out_dir.name}/{analysis_name}/trace_dir --top_coverage_regions {num_coverage_regions} --cpus {high_cpus} --memory '{high_memory} GB' --gap {gap} {resume_flag}",
+        container_cmd=f"nextflow run main.nf -work-dir /app/{out_dir.name}/{analysis_name}/work/ --sample_sheet /app/{out_dir.name}/{rewritten_path.name} --outdir /app/{out_dir.name}/{analysis_name} --trace_dir /app/{out_dir.name}/{analysis_name}/trace_dir --top_coverage_regions {num_coverage_regions} --cpus {high_cpus} --memory '{high_memory} GB' --gap {gap} --padding {padding} {resume_flag}",
         cpus=args.cpus,
         memory=args.memory,
         dry_run=args.dry_run
