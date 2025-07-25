@@ -309,7 +309,6 @@ process RUN_BLAST {
 
     script:
     """
-    echo "BRO1"
     makeblastdb -dbtype nucl -in $ref_fasta -out db
     blastn -db db -query $additional_probe_80_percent_fasta -evalue 10 -outfmt 6 -out top_${top_coverage_regions}_additional_probe_80perc_only_blast_result.txt
     """
