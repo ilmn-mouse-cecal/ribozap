@@ -3,6 +3,8 @@
 params.sample_sheet = null
 params.outdir = null
 params.top_coverage_regions = 50
+params.gap = 25
+params.padding = 50
 params.test_dir = "${params.outdir}/test_probes"
 
 include { TEST_PROBES } from './subworkflows/test_probes'
