@@ -60,7 +60,6 @@ def run_docker(
         docker_options.append(f"--memory={memory}g")
 
     mount_lines = read_mount_file(mount_file)
-    print(mount_lines)
 
     # Add required mounts
     mount_lines += get_required_mounts(out_dir, analysis_name)
