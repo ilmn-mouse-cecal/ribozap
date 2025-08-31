@@ -17,9 +17,9 @@ def get_required_mounts(out_dir: Path, analysis_name: str):
     nextflow_logs = out_dir / analysis_name / "logs"
 
     mounts = [
-        f'-v "{out_dir.resolve()}:/app/{out_dir.name}"',
+        f'-v "{out_dir.resolve()}:{out_dir.resolve()}"',
         f'-v "{out_dir.resolve()}/{analysis_name}:/app/nextflow_files"',
-        f'-v "{nextflow_logs.resolve()}:/app/logs"',
+        f'-v "{nextflow_logs.resolve()}:{nextflow_logs.resolve()}"',
     ]
     # rRNA index
     rrna_index = Path(environ["HOME"]) / ".rRNA_database_index"

@@ -130,8 +130,8 @@ def main():
     gap = args.gap
     padding = args.padding
 
-    rewritten_path = out_dir / "rewritten_sample_sheet.csv"
-    mount_path = out_dir / "docker_mounts.txt"
+    rewritten_path = out_dir.resolve() / "rewritten_sample_sheet.csv"
+    mount_path = out_dir.resolve() / "docker_mounts.txt"
 
     # Step 1: Rewrite sample sheet
     validate_and_rewrite(args.sample_sheet, rewritten_path, mount_path)
@@ -144,7 +144,7 @@ def main():
         mount_file=mount_path,
         out_dir=out_dir,
         analysis_name=analysis_name,
-        container_cmd=f"nextflow run main.nf -work-dir /app/{out_dir.name}/{analysis_name}/work/ --sample_sheet /app/{out_dir.name}/{rewritten_path.name} --outdir /app/{out_dir.name}/{analysis_name} --trace_dir /app/{out_dir.name}/{analysis_name}/trace_dir --top_coverage_regions {num_coverage_regions} --cpus {high_cpus} --memory '{high_memory} GB' --gap {gap} --padding {padding} {resume_flag}",
+        container_cmd=f"nextflow run main.nf -work-dir {out_dir.resolve()}/{analysis_name}/work/ --sample_sheet {rewritten_path} --outdir {out_dir.resolve()}/{analysis_name} --trace_dir {out_dir.resolve()}/{analysis_name}/trace_dir --top_coverage_regions {num_coverage_regions} --cpus {high_cpus} --memory '{high_memory} GB' --gap {gap} --padding {padding} {resume_flag}",
         cpus=args.cpus,
         memory=args.memory,
         dry_run=args.dry_run

@@ -66,7 +66,7 @@ workflow {
 process GET_FASTA {
     label 'medium'
 
-    publishDir "${params.outdir}/probes/", mode: 'copy'
+    publishDir "${params.outdir}/probes/"
 
     input:
     path(bed_file)
@@ -310,7 +310,7 @@ process SORT_AND_INDEX {
 process MERGE_PAIRED_READS {
     label 'medium'
 
-    publishDir "${params.outdir}/$sample_id", mode: 'copy'
+    publishDir "${params.outdir}/$sample_id"
 
     tag "$sample_id"
     errorStrategy 'ignore'
