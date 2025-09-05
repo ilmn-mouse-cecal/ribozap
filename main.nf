@@ -5,6 +5,7 @@ params.outdir = null
 params.top_coverage_regions = 50
 params.gap = 25
 params.padding = 50
+params.coverage_threshold = 500
 params.test_dir = "${params.outdir}/test_probes"
 
 include { TEST_PROBES } from './subworkflows/test_probes'
@@ -38,7 +39,7 @@ workflow {
 
     SAM_TO_BAM(sortmerna_out)
     GENOME_COVERAGE_BED(SAM_TO_BAM.out, "/app/resources/Genome/allFasta.fasta")
-    IDENTIFY_HIGH_COVERAGE_BLOCKS(GENOME_COVERAGE_BED.out)
+    IDENTIFY_HIGH_COVERAGE_BLOCKS(GENOME_COVERAGE_BED.out, params.coverage_threshold)
     MERGE_CLOSE_BY_BLOCKS(IDENTIFY_HIGH_COVERAGE_BLOCKS.out)
     ADD_READ_PERCENT(MERGE_CLOSE_BY_BLOCKS.out)
     ADD_READ_PERCENT.out.collect().set { all_cov_sorted_bed_percent_added }
@@ -255,13 +256,14 @@ process IDENTIFY_HIGH_COVERAGE_BLOCKS {
 
     input:
     tuple val(sample_id), path(genome_cov_bed), path(merged_fastq)
+    val(coverage_threshold)
 
     output:
     tuple val(sample_id), path("${sample_id}_high_coverage_blocks.tsv"), path(merged_fastq)
 
     script:
     """
-    /app/bin/identify_blocks.py -s ${sample_id} -c $genome_cov_bed --high 500 --mid 100
+    /app/bin/identify_blocks.py -s ${sample_id} -c $genome_cov_bed --high ${coverage_threshold}
     """
 }
 
